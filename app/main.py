@@ -1,7 +1,10 @@
-import time
-from typing import Dict, Any
-from fastapi import FastAPI, HTTPException, status
+import os
+from pathlib import Path
+from typing import Dict, Any, Union
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.schemas import (
     TelemetryInput,
@@ -11,6 +14,8 @@ from app.schemas import (
     HealthResponse,
 )
 from app.model_loader import detector, RULE_THRESHOLDS
+
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
 app = FastAPI(
     title="TelemetrySentry API",
@@ -32,19 +37,63 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static frontend assets (css, js)
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+
 
 @app.get("/", tags=["General"])
-async def root() -> Dict[str, Any]:
-    """Root endpoint welcoming clients and directing to docs."""
+async def root(request: Request):
+    """
+    Root endpoint. Returns the interactive HTML dashboard for browser requests,
+    or service metadata JSON for API clients.
+    """
+    accept = request.headers.get("accept", "")
+    index_file = FRONTEND_DIR / "index.html"
+    
+    # If a browser requests HTML, serve the dashboard
+    if "text/html" in accept and index_file.exists():
+        return FileResponse(index_file)
+        
     return {
         "service": "TelemetrySentry Anomaly Detection Microservice",
         "version": "1.0.0",
         "status": "operational",
         "docs_url": "/docs",
+        "dashboard_url": "/dashboard",
         "health_url": "/health",
         "predict_url": "/predict",
         "model": detector.get_metadata().model_dump(),
     }
+
+
+@app.get("/dashboard", tags=["Dashboard"])
+async def get_dashboard():
+    """Serves the interactive HTML/CSS/JS telemetry sentry dashboard."""
+    index_file = FRONTEND_DIR / "index.html"
+    if not index_file.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Frontend dashboard not found",
+        )
+    return FileResponse(index_file)
+
+
+# Route css and js from root if requested by index.html directly
+@app.get("/style.css", include_in_schema=False)
+async def get_css():
+    css_file = FRONTEND_DIR / "style.css"
+    if css_file.exists():
+        return FileResponse(css_file, media_type="text/css")
+    raise HTTPException(status_code=404)
+
+
+@app.get("/app.js", include_in_schema=False)
+async def get_js():
+    js_file = FRONTEND_DIR / "app.js"
+    if js_file.exists():
+        return FileResponse(js_file, media_type="application/javascript")
+    raise HTTPException(status_code=404)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["Monitoring"])

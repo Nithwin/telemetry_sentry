@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="TelemetrySentry — Real-Time Infrastructure Anomaly Intelligence Dashboard powered by Isolation Forest ML">
+    <title>TelemetrySentry — Autonomous Anomaly Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+        <div class="header-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <circle cx="12" cy="11" r="3"/>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>TelemetrySentry</h1>
+                    <span class="version-tag">v1.0.0</span>
+                </div>
+            </div>
+
+            <div class="header-meta">
+                <div class="status-indicator" id="apiStatusBadge">
+                    <span class="status-dot"></span>
+                    <span class="status-label" id="apiStatusText">Checking API...</span>
+                </div>
+                <div class="model-meta-badge" id="modelMetaBadge">
+                    <span class="badge-label">Model:</span>
+                    <span class="badge-val">IsolationForest (200 trees)</span>
+                </div>
+                <div class="model-meta-badge">
+                    <span class="badge-label">Threshold:</span>
+                    <span class="badge-val" id="metaThreshold">-0.1140</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-layout">
+        <!-- Live Alert Banner -->
+        <section id="alertBanner" class="alert-banner status-normal">
+            <div class="banner-content">
+                <div class="banner-icon-box" id="bannerIcon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+                <div class="banner-text">
+                    <div class="banner-title-row">
+                        <h2 id="bannerVerdict">SYSTEM STATUS: NORMAL</h2>
+                        <span id="bannerSeverity" class="severity-pill pill-normal">NORMAL</span>
+                        <span id="advantageBadge" class="advantage-pill hidden">ML ADVANTAGE: Caught by Isolation Forest</span>
+                    </div>
+                    <p id="bannerSummary">Telemetry profile within standard operational parameters. All metric distributions stable.</p>
+                </div>
+            </div>
+            <div class="banner-metrics">
+                <div class="mini-metric">
+                    <span class="mini-label">Anomaly Score</span>
+                    <span class="mini-val" id="miniScore">0.0821</span>
+                </div>
+                <div class="mini-metric">
+                    <span class="mini-label">Threshold</span>
+                    <span class="mini-val" id="miniThreshold">-0.1140</span>
+                </div>
+                <div class="mini-metric">
+                    <span class="mini-label">Confidence</span>
+                    <span class="mini-val" id="miniConfidence">98.5%</span>
+                </div>
+                <div class="mini-metric">
+                    <span class="mini-label">Static Rule</span>
+                    <span class="mini-val" id="miniRule">PASS</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Primary Grid Layout -->
+        <div class="dashboard-grid">
+            <!-- Left Column: Controls & Simulation -->
+            <div class="grid-col-left">
+                <!-- Preset Scenarios Card -->
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <h3>Operational Scenario Presets</h3>
+                        </div>
+                        <div class="auto-stream-toggle">
+                            <label class="toggle-switch" title="Auto-stream simulated telemetry every 1.5s">
+                                <input type="checkbox" id="autoStreamCheckbox">
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-text">Live Feed</span>
+                        </div>
+                    </div>
+                    <div class="presets-row" id="presetsContainer">
+                        <button class="preset-btn active" data-preset="normal">Normal Baseline</button>
+                        <button class="preset-btn" data-preset="latency_spike">Latency Spike</button>
+                        <button class="preset-btn" data-preset="traffic_surge">Traffic Surge</button>
+                        <button class="preset-btn" data-preset="error_spike">Error Burst</button>
+                        <button class="preset-btn" data-preset="subtle_incident">Subtle Multi-Drift</button>
+                        <button class="preset-btn" data-preset="combined_incident">Combined Failure</button>
+                    </div>
+                    <p class="preset-desc" id="presetDescription">Standard baseline operations under typical non-peak server traffic.</p>
+                </div>
+
+                <!-- Live Telemetry Sliders -->
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="4" y1="21" x2="4" y2="14"></line>
+                                <line x1="4" y1="10" x2="4" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12" y2="3"></line>
+                                <line x1="20" y1="21" x2="20" y2="16"></line>
+                                <line x1="20" y1="12" x2="20" y2="3"></line>
+                                <line x1="1" y1="14" x2="7" y2="14"></line>
+                                <line x1="9" y1="8" x2="15" y2="8"></line>
+                                <line x1="17" y1="16" x2="23" y2="16"></line>
+                            </svg>
+                            <h3>Telemetry Signal Modulator</h3>
+                        </div>
+                        <button class="btn-text" id="btnResetTelemetry">Reset to Normal</button>
+                    </div>
+
+                    <div class="sliders-list">
+                        <!-- Request Duration -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="metric-name">Request Duration (Latency)</span>
+                                <div class="metric-val-wrap">
+                                    <span class="metric-val" id="valLatency">115.0</span>
+                                    <span class="metric-unit">ms</span>
+                                </div>
+                            </div>
+                            <input type="range" id="inputLatency" min="20" max="2200" step="5" value="115" class="custom-slider">
+                            <div class="slider-limits">
+                                <span>20ms</span>
+                                <span class="rule-limit">Static Rule: >1000ms</span>
+                                <span>2200ms</span>
+                            </div>
+                        </div>
+
+                        <!-- CPU Usage -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="metric-name">CPU Utilization</span>
+                                <div class="metric-val-wrap">
+                                    <span class="metric-val" id="valCpu">28.0</span>
+                                    <span class="metric-unit">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="inputCpu" min="0" max="100" step="0.5" value="28.0" class="custom-slider">
+                            <div class="slider-limits">
+                                <span>0%</span>
+                                <span class="rule-limit">Static Rule: >85%</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+
+                        <!-- Memory Usage -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="metric-name">Memory Utilization</span>
+                                <div class="metric-val-wrap">
+                                    <span class="metric-val" id="valMemory">46.0</span>
+                                    <span class="metric-unit">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="inputMemory" min="0" max="100" step="0.5" value="46.0" class="custom-slider">
+                            <div class="slider-limits">
+                                <span>0%</span>
+                                <span class="rule-limit">Static Rule: >90%</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+
+                        <!-- Requests Per Second -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="metric-name">Inbound Throughput</span>
+                                <div class="metric-val-wrap">
+                                    <span class="metric-val" id="valRps">65.0</span>
+                                    <span class="metric-unit">rps</span>
+                                </div>
+                            </div>
+                            <input type="range" id="inputRps" min="5" max="380" step="1" value="65" class="custom-slider">
+                            <div class="slider-limits">
+                                <span>5 rps</span>
+                                <span class="rule-limit">Static Rule: >250 rps</span>
+                                <span>380 rps</span>
+                            </div>
+                        </div>
+
+                        <!-- Error Rate -->
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <span class="metric-name">Error Rate (5xx)</span>
+                                <div class="metric-val-wrap">
+                                    <span class="metric-val" id="valError">0.25</span>
+                                    <span class="metric-unit">%</span>
+                                </div>
+                            </div>
+                            <input type="range" id="inputError" min="0" max="100" step="0.1" value="0.25" class="custom-slider">
+                            <div class="slider-limits">
+                                <span>0%</span>
+                                <span class="rule-limit">Static Rule: >10%</span>
+                                <span>100%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-btn-row">
+                        <button class="btn btn-primary" id="btnDiagnose">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 14 14"></polyline>
+                            </svg>
+                            Run Diagnostic Evaluation
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Visualization & Analysis -->
+            <div class="grid-col-right">
+                <!-- Real-time Chart -->
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                            </svg>
+                            <h3>Real-Time Telemetry Stream</h3>
+                        </div>
+                        <div class="chart-legend">
+                            <span class="legend-item"><span class="legend-color normal-line"></span>Latency (ms)</span>
+                            <span class="legend-item"><span class="legend-color cpu-line"></span>CPU (%)</span>
+                            <span class="legend-item"><span class="legend-color anomaly-dot"></span>Anomaly Trigger</span>
+                        </div>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="telemetryCanvas" width="700" height="240"></canvas>
+                    </div>
+                </div>
+
+                <!-- Per-Metric Diagnostic Table -->
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                            </svg>
+                            <h3>Multi-Dimensional Metric Breakdown</h3>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="diag-table" id="diagTable">
+                            <thead>
+                                <tr>
+                                    <th>Telemetry Dimension</th>
+                                    <th>Observed Value</th>
+                                    <th>Operational State</th>
+                                    <th>Legacy Static Rule</th>
+                                </tr>
+                            </thead>
+                            <tbody id="diagTableBody">
+                                <!-- Populated dynamically by app.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Machine Learning vs Rule-Based Comparison -->
+                <div class="card glass-card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <h3>Strategy Benchmark: ML vs Static Alerts</h3>
+                        </div>
+                    </div>
+                    <div class="benchmark-grid">
+                        <div class="benchmark-card baseline-border">
+                            <div class="b-badge">Legacy Monitoring</div>
+                            <h4>Static Threshold Rules</h4>
+                            <div class="b-metrics">
+                                <div><span>F1-Score:</span> <strong>0.768</strong></div>
+                                <div><span>Recall:</span> <strong>63.0%</strong></div>
+                                <div><span>Missed Rate:</span> <strong class="text-danger">37.0%</strong></div>
+                            </div>
+                            <p class="b-note">Completely blind to subtle correlated drift; triggers false alarms on legitimate traffic surges.</p>
+                        </div>
+                        <div class="benchmark-card ml-border">
+                            <div class="b-badge ml-tag">TelemetrySentry ML</div>
+                            <h4>Isolation Forest (Calibrated)</h4>
+                            <div class="b-metrics">
+                                <div><span>F1-Score:</span> <strong class="text-success">0.989</strong></div>
+                                <div><span>Recall:</span> <strong class="text-success">98.7%</strong></div>
+                                <div><span>Missed Rate:</span> <strong class="text-success">1.3%</strong></div>
+                            </div>
+                            <p class="b-note">Evaluates joint 5-dimensional density to detect anomalous states regardless of single-metric limits.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <p>TelemetrySentry &copy; 2026 — Advanced Autonomous Infrastructure Observability.</p>
+            <div class="footer-links">
+                <a href="/docs" target="_blank" class="footer-link">FastAPI Swagger Docs</a>
+                <a href="/redoc" target="_blank" class="footer-link">ReDoc</a>
+                <a href="/health" target="_blank" class="footer-link">Health Endpoint</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
