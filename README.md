@@ -62,7 +62,7 @@ In production Site Reliability Engineering (SRE), static alerts frequently produ
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/telemetry_sentry.git
+git clone https://github.com/Nithwin/telemetry_sentry.git
 cd telemetry_sentry
 
 # Create and activate virtual environment
